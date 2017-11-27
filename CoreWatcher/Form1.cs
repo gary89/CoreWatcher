@@ -27,35 +27,33 @@ namespace CoreWatcher
         public Form1()
         {
             InitializeComponent();
-
-            this.StartPosition = FormStartPosition.CenterScreen;
-            this.WindowState = FormWindowState.Minimized;
-            this.ShowInTaskbar = false;
-
-            this.cmp = new Computer();
+            
+            cmp = new Computer();
 
             for (int i = 0; i < Environment.ProcessorCount; i++)
             {
-                this.cpuCounters.Add(new PerformanceCounter("Processor", "% Processor Time", i.ToString()));
+                cpuCounters.Add(new PerformanceCounter("Processor", "% Processor Time", i.ToString()));
                 NotifyIcon nic = new NotifyIcon() { Icon = SystemIcons.Question, Visible = true };
                 nic.Click += RightClick;
-                this.cpuNotifyIcons.Add(nic);
+                cpuNotifyIcons.Add(nic);
             }
 
-            this.ramIcon = new NotifyIcon() { Icon = SystemIcons.Question, Visible = true };
-            this.ramIcon.Click += RightClick;
+            ramIcon = new NotifyIcon() { Icon = SystemIcons.Question, Visible = true };
+            ramIcon.Click += RightClick;
 
-            this.timer1.Interval = 250;
-            this.timer1.Start();
+            timer1.Interval = 250;
+            timer1.Start();
         }
 
         private void RightClick(object sender, EventArgs ea)
         {
-            if (ea is MouseEventArgs)
-            {
-                if ((ea as MouseEventArgs).Button == System.Windows.Forms.MouseButtons.Right)
-                    this.Close();
-            }
+            MouseEventArgs mea = ea as MouseEventArgs;
+
+            if (mea == null)
+                return;
+
+            if (mea.Button == MouseButtons.Right)
+                Close();
         }
 
         private Icon MakePict(int percent, Brush brush)
@@ -74,19 +72,19 @@ namespace CoreWatcher
             for (int i = 0; i < cpuCounters.Count; i++)
             {
                 int percent = (int)cpuCounters[i].NextValue();
-                if (!this.cpuIcons.ContainsKey(percent))
-                    this.cpuIcons.Add(percent, MakePict(percent, CpuBrush));
-                this.cpuNotifyIcons[i].Icon = cpuIcons[percent];
-                this.cpuNotifyIcons[i].Text = string.Format("Cpu{0} {1}%", cpuCounters[i].InstanceName, percent);
+                if (!cpuIcons.ContainsKey(percent))
+                    cpuIcons.Add(percent, MakePict(percent, CpuBrush));
+                cpuNotifyIcons[i].Icon = cpuIcons[percent];
+                cpuNotifyIcons[i].Text = string.Format("Cpu{0} {1}%", cpuCounters[i].InstanceName, percent);
             }
             Console.WriteLine();
-            this.maxRam = cmp.Info.TotalPhysicalMemory / megaByte;
-            this.actRam = this.maxRam - (cmp.Info.AvailablePhysicalMemory / megaByte);
+            maxRam = cmp.Info.TotalPhysicalMemory / megaByte;
+            actRam = maxRam - (cmp.Info.AvailablePhysicalMemory / megaByte);
 
-            int ram = Convert.ToInt32(this.actRam / this.maxRam * 100);
-            ramIcon.Text = string.Format("RAM {0:0} MB / {1:0} MB ({2}%)", this.actRam, this.maxRam, ram);
-            if (!this.ramIcons.ContainsKey(ram))
-                this.ramIcons.Add(ram, MakePict(ram, RamBrush));
+            int ram = Convert.ToInt32(actRam / maxRam * 100);
+            ramIcon.Text = string.Format("RAM {0:0} MB / {1:0} MB ({2}%)", actRam, maxRam, ram);
+            if (!ramIcons.ContainsKey(ram))
+                ramIcons.Add(ram, MakePict(ram, RamBrush));
             ramIcon.Icon = ramIcons[ram];
         }
 
@@ -94,14 +92,10 @@ namespace CoreWatcher
         {
             timer1.Stop();
             foreach (var item in cpuNotifyIcons)
-            {
                 item.Dispose();
-            }
             ramIcon.Dispose();
             foreach (var item in cpuCounters)
-            {
                 item.Dispose();
-            }
         }
     }
 }
